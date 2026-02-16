@@ -34,7 +34,7 @@ export interface SubprocessEvents {
   raw: (line: string) => void;
 }
 
-const DEFAULT_TIMEOUT = 300000; // 5 minutes
+const DEFAULT_TIMEOUT = 1800000; // 30 minutes
 
 export class ClaudeSubprocess extends EventEmitter {
   private process: ChildProcess | null = null;
@@ -58,7 +58,10 @@ export class ClaudeSubprocess extends EventEmitter {
         // Use spawn() for security - no shell interpretation
         this.process = spawn("claude", args, {
           cwd: options.cwd || process.cwd(),
-          env: { ...process.env },
+          env: {
+            ...process.env,
+            CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1",
+          },
           stdio: ["pipe", "pipe", "pipe"],
         });
 
