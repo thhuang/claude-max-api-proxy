@@ -141,7 +141,7 @@ export class ClaudeSubprocess extends EventEmitter {
       options.model, // Model alias (opus/sonnet/haiku)
       "--no-session-persistence", // Don't save sessions
       "--permission-mode",
-      "acceptEdits", // Allow file writes without prompting
+      "bypassPermissions", // Skip all permission checks
       prompt, // Pass prompt as argument (more reliable than stdin)
     ];
 
