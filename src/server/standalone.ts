@@ -5,7 +5,7 @@
  * Usage:
  *   npm run start
  *   # or
- *   node dist/server/standalone.js [port]
+ *   node dist/server/standalone.js [port] [--cwd /path/to/dir]
  */
 
 import { startServer, stopServer } from "./index.js";
@@ -17,11 +17,21 @@ async function main(): Promise<void> {
   console.log("Claude Code CLI Provider - Standalone Server");
   console.log("============================================\n");
 
-  // Parse port from command line
-  const port = parseInt(process.argv[2] || String(DEFAULT_PORT), 10);
-  if (isNaN(port) || port < 1 || port > 65535) {
-    console.error(`Invalid port: ${process.argv[2]}`);
-    process.exit(1);
+  // Parse arguments
+  const args = process.argv.slice(2);
+  let port = DEFAULT_PORT;
+  let cwd: string | undefined;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--cwd" && args[i + 1]) {
+      cwd = args[++i];
+    } else if (!args[i].startsWith("--")) {
+      port = parseInt(args[i], 10);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        console.error(`Invalid port: ${args[i]}`);
+        process.exit(1);
+      }
+    }
   }
 
   // Verify Claude CLI
@@ -45,7 +55,7 @@ async function main(): Promise<void> {
 
   // Start server
   try {
-    await startServer({ port });
+    await startServer({ port, cwd });
     console.log("\nServer ready. Test with:");
     console.log(`  curl -X POST http://localhost:${port}/v1/chat/completions \\`);
     console.log(`    -H "Content-Type: application/json" \\`);

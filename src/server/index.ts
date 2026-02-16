@@ -11,9 +11,18 @@ import { handleChatCompletions, handleModels, handleHealth } from "./routes.js";
 export interface ServerConfig {
   port: number;
   host?: string;
+  cwd?: string;
 }
 
 let serverInstance: Server | null = null;
+let serverCwd: string | undefined;
+
+/**
+ * Get the configured working directory for subprocesses
+ */
+export function getSubprocessCwd(): string | undefined {
+  return serverCwd;
+}
 
 /**
  * Create and configure the Express app
@@ -80,7 +89,8 @@ function createApp(): Express {
  * Start the HTTP server
  */
 export async function startServer(config: ServerConfig): Promise<Server> {
-  const { port, host = "127.0.0.1" } = config;
+  const { port, host = "127.0.0.1", cwd } = config;
+  serverCwd = cwd;
 
   if (serverInstance) {
     console.log("[Server] Already running, returning existing instance");

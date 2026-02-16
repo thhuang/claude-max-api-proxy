@@ -53,7 +53,7 @@ export class ClaudeSubprocess extends EventEmitter {
       try {
         // Use spawn() for security - no shell interpretation
         this.process = spawn("claude", args, {
-          cwd: options.cwd || process.env.HOME || process.cwd(),
+          cwd: options.cwd || process.cwd(),
           env: { ...process.env },
           stdio: ["pipe", "pipe", "pipe"],
         });
