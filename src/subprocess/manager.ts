@@ -62,14 +62,8 @@ export class ClaudeSubprocess extends EventEmitter {
           stdio: ["pipe", "pipe", "pipe"],
         });
 
-        // Set timeout
-        this.timeoutId = setTimeout(() => {
-          if (!this.isKilled) {
-            this.isKilled = true;
-            this.process?.kill("SIGTERM");
-            this.emit("error", new Error(`Request timed out after ${timeout}ms`));
-          }
-        }, timeout);
+        // Set inactivity timeout (resets on each data chunk)
+        this.resetTimeout(timeout);
 
         // Handle spawn errors (e.g., claude not found)
         this.process.on("error", (err) => {
@@ -92,17 +86,17 @@ export class ClaudeSubprocess extends EventEmitter {
 
         // Parse JSON stream from stdout
         this.process.stdout?.on("data", (chunk: Buffer) => {
+          this.resetTimeout(timeout);
           this.buffer += chunk.toString();
           this.processBuffer();
         });
 
-        // Capture stderr for debugging
+        // Capture stderr for debugging (also resets timeout — CLI writes here during tool use)
         this.process.stderr?.on("data", (chunk: Buffer) => {
+          this.resetTimeout(timeout);
           const errorText = chunk.toString().trim();
           if (errorText) {
-            // Don't emit as error unless it's actually an error
-            // Claude CLI may write debug info to stderr
-            console.error("[Subprocess stderr]:", errorText.slice(0, 200));
+            console.error("[Claude stderr]:", errorText.slice(0, 200));
           }
         });
 
@@ -185,6 +179,20 @@ export class ClaudeSubprocess extends EventEmitter {
         this.emit("raw", trimmed);
       }
     }
+  }
+
+  /**
+   * Reset the inactivity timeout
+   */
+  private resetTimeout(timeout: number): void {
+    this.clearTimeout();
+    this.timeoutId = setTimeout(() => {
+      if (!this.isKilled) {
+        this.isKilled = true;
+        this.process?.kill("SIGTERM");
+        this.emit("error", new Error(`Request timed out after ${timeout}ms of inactivity`));
+      }
+    }, timeout);
   }
 
   /**
