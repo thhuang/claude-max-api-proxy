@@ -44,6 +44,7 @@ export async function handleChatCompletions(
 
     // Convert to CLI input format
     const cliInput = openaiToCli(body);
+    console.error(`[Request] model=${cliInput.model} stream=${stream} prompt=${cliInput.prompt.length}ch`);
     const subprocess = new ClaudeSubprocess();
 
     if (stream) {

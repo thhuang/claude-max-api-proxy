@@ -41,6 +41,8 @@ export class ClaudeSubprocess extends EventEmitter {
   private buffer: string = "";
   private timeoutId: NodeJS.Timeout | null = null;
   private isKilled: boolean = false;
+  private startTime: number = 0;
+  private firstChunkLogged: boolean = false;
 
   /**
    * Start the Claude CLI subprocess with the given prompt
@@ -48,6 +50,8 @@ export class ClaudeSubprocess extends EventEmitter {
   async start(prompt: string, options: SubprocessOptions): Promise<void> {
     const args = this.buildArgs(prompt, options);
     const timeout = options.timeout || DEFAULT_TIMEOUT;
+    this.startTime = Date.now();
+    this.firstChunkLogged = false;
 
     return new Promise((resolve, reject) => {
       try {
@@ -84,13 +88,11 @@ export class ClaudeSubprocess extends EventEmitter {
         // Close stdin since we pass prompt as argument
         this.process.stdin?.end();
 
-        console.error(`[Subprocess] Process spawned with PID: ${this.process.pid}`);
+        console.error(`[Claude] Started (PID ${this.process.pid}, model=${options.model})`);
 
         // Parse JSON stream from stdout
         this.process.stdout?.on("data", (chunk: Buffer) => {
-          const data = chunk.toString();
-          console.error(`[Subprocess] Received ${data.length} bytes of stdout`);
-          this.buffer += data;
+          this.buffer += chunk.toString();
           this.processBuffer();
         });
 
@@ -106,7 +108,8 @@ export class ClaudeSubprocess extends EventEmitter {
 
         // Handle process close
         this.process.on("close", (code) => {
-          console.error(`[Subprocess] Process closed with code: ${code}`);
+          const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
+          console.error(`[Claude] Finished (exit=${code}, ${elapsed}s)`);
           this.clearTimeout();
           // Process any remaining buffer
           if (this.buffer.trim()) {
@@ -165,6 +168,11 @@ export class ClaudeSubprocess extends EventEmitter {
         this.emit("message", message);
 
         if (isContentDelta(message)) {
+          if (!this.firstChunkLogged) {
+            this.firstChunkLogged = true;
+            const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
+            console.error(`[Claude] Responding (first token after ${elapsed}s)`);
+          }
           // Emit content delta for streaming
           this.emit("content_delta", message as ClaudeCliStreamEvent);
         } else if (isAssistantMessage(message)) {
