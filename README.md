@@ -70,10 +70,19 @@ npm run build
 ### Start the server
 
 ```bash
+# Default port (3456), Claude CLI runs in current directory
 node dist/server/standalone.js
+
+# Custom port
+node dist/server/standalone.js 8080
+
+# Custom port + working directory for Claude CLI subprocesses
+node dist/server/standalone.js 8080 --cwd ~/
 ```
 
 The server runs at `http://localhost:3456` by default.
+
+The `--cwd` flag sets the working directory where Claude CLI subprocesses run. This is useful when the proxy is installed globally — without it, Claude CLI launches in whatever directory the proxy was started from.
 
 ### Test it
 
@@ -114,9 +123,9 @@ curl -N -X POST http://localhost:3456/v1/chat/completions \
 
 | Model ID | Maps To |
 |----------|---------|
-| `claude-opus-4` | Claude Opus 4.5 |
-| `claude-sonnet-4` | Claude Sonnet 4 |
-| `claude-haiku-4` | Claude Haiku 4 |
+| `claude-opus-4` | Claude Opus (context: 1M, max output: 128K) |
+| `claude-sonnet-4` | Claude Sonnet (context: 200K, max output: 64K) |
+| `claude-haiku-4` | Claude Haiku (context: 200K, max output: 64K) |
 
 ## Configuration with Popular Tools
 
@@ -193,6 +202,8 @@ src/
 - No API keys stored or transmitted by this provider
 - All authentication handled by Claude CLI's secure keychain storage
 - Prompts passed as CLI arguments, not through shell interpretation
+- Claude CLI runs with `--permission-mode acceptEdits` to allow file writes in non-interactive mode
+- Supports `--cwd` flag to control where Claude CLI subprocesses execute
 
 ## Cost Savings Example
 
