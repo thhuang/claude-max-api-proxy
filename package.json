@@ -9,7 +9,7 @@
     "claude-max-api": "dist/server/standalone.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/server/standalone.js",
     "dev": "tsc --watch",
     "start": "node dist/server/standalone.js",
     "test": "node --test dist/**/*.test.js",
